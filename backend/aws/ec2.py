@@ -1,6 +1,7 @@
 """EC2 service client"""
 import boto3
 
+print("i am daizy")
 class EC2Client:
     def __init__(self, region_name="us-east-1"):
         self.client = boto3.client('ec2', region_name=region_name)
