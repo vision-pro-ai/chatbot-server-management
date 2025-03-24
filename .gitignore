@@ -1,0 +1,13 @@
+# Ignore Python bytecode files
+*.pyc
+*.pyo
+__pycache__/
+
+# Ignore virtual environment folder
+venv/
+
+# Ignore .env files or other sensitive information
+.env
+
+# Ignore frontend build (if applicable)
+
