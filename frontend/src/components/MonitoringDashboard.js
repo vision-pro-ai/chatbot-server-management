@@ -1,28 +1,70 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Box, VStack, Text, Spinner } from "@chakra-ui/react";
 import { fetchInstances } from "../services/api";
 
-export default function MonitoringDashboard() {
+const MonitoringDashboard = () => {
   const [instances, setInstances] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadInstances = async () => {
-      const data = await fetchInstances();
-      setInstances(data);
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchInstances();
+        setInstances(data);
+      } catch (err) {
+        console.error("Error loading instances:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
+
     loadInstances();
   }, []);
 
+  if (loading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minH="200px"
+      >
+        <Spinner size="xl" />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box p={4} bg="red.50" borderRadius="md">
+        <Text color="red.500">Error: {error}</Text>
+      </Box>
+    );
+  }
+
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
-      <h1 className="text-2xl font-bold">Server Monitoring</h1>
-      <ul>
-        {instances.map((instance) => (
-          <li key={instance.id} className="p-2 border rounded-md my-2">
-            {instance.name} - {instance.status}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <VStack spacing={4} align="stretch">
+      <Text fontSize="xl" fontWeight="bold">
+        EC2 Instances
+      </Text>
+      {instances.length === 0 ? (
+        <Text>No instances found</Text>
+      ) : (
+        instances.map((instance, index) => (
+          <Box key={index} p={4} borderWidth={1} borderRadius="md">
+            <Text>ID: {instance["Instance ID"]}</Text>
+            <Text>Type: {instance["Instance Type"]}</Text>
+            <Text>State: {instance["State"]}</Text>
+          </Box>
+        ))
+      )}
+    </VStack>
   );
-}
+};
+
+export default MonitoringDashboard;
