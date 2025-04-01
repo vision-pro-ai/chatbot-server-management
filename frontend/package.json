@@ -1,0 +1,41 @@
+{
+  "name": "server-management-chatbot",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@headlessui/react": "latest",
+    "@heroicons/react": "latest",
+    "axios": "latest",
+    "next": "^15.2.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-query": "latest"
+  },
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.17"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vision-pro-ai/chatbot-server-management.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vision-pro-ai/chatbot-server-management/issues"
+  },
+  "homepage": "https://github.com/vision-pro-ai/chatbot-server-management#readme",
+  "description": ""
+}

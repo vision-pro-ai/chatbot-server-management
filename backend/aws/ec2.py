@@ -1,4 +1,3 @@
-"""EC2 service client"""
 import boto3
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
@@ -75,30 +74,53 @@ def enable_detailed_monitoring(instance_id, region='us-east-1'):
     except Exception as e:
         return f"Error enabling monitoring: {str(e)}"
 
+# Flask route integration example
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+@app.route('/ec2/instances', methods=['GET'])
+def list_instances():
+    """List all EC2 instances."""
+    instances = get_ec2_instances()
+    return jsonify(instances)
+
+@app.route('/ec2/tag', methods=['POST'])
+def tag_instance():
+    """Tag EC2 instance."""
+    data = request.json
+    instance_id = data.get('instance_id')
+    tags = data.get('tags', {})
+    
+    if not instance_id or not tags:
+        return jsonify({"error": "Instance ID and tags are required"}), 400
+
+    result = tag_ec2_instance(instance_id, tags)
+    return jsonify({"message": result})
+
+@app.route('/ec2/decommission', methods=['POST'])
+def decommission_instance():
+    """Decommission EC2 instance (stop and terminate)."""
+    data = request.json
+    instance_id = data.get('instance_id')
+    
+    if not instance_id:
+        return jsonify({"error": "Instance ID is required"}), 400
+
+    result = decommission_ec2_instance(instance_id)
+    return jsonify({"message": result})
+
+@app.route('/ec2/enable-monitoring', methods=['POST'])
+def enable_monitoring():
+    """Enable detailed monitoring for EC2 instance."""
+    data = request.json
+    instance_id = data.get('instance_id')
+
+    if not instance_id:
+        return jsonify({"error": "Instance ID is required"}), 400
+
+    result = enable_detailed_monitoring(instance_id)
+    return jsonify({"message": result})
 
 if __name__ == "__main__":
-    # Fetch and display EC2 instances
-    instances = get_ec2_instances()
-    if instances:
-        for instance in instances:
-            print(instance)
-
-    # Get instance ID from user
-    """instance_id = input("Enter the EC2 Instance ID to tag: ").strip()
-
-    # Get user input for tags (comma-separated key=value pairs)
-    tag_input = input("Enter tags (key=value, separated by commas): ").strip()
-
-    # Convert input string into a dictionary
-    tags = dict(item.split("=") for item in tag_input.split(",") if "=" in item)
-
-    # Call the tagging function
-     print(tag_ec2_instance(instance_id, tags))
-
-        # Get instance ID for decommissioning
-        instance_id = input("Enter the EC2 Instance ID to decommission: ").strip()
-        print(decommission_ec2_instance(instance_id))
-        """
-    # Enable detailed monitoring
-    instance_id = input("Enter the EC2 Instance ID to enable detailed monitoring: ").strip()
-    print(enable_detailed_monitoring(instance_id))
+    app.run(debug=True)

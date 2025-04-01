@@ -1,23 +1,28 @@
-import React, { useEffect, useState } from "react";
-import { fetchInstanceMetrics } from "../services/api";
+"use client";
+import { useEffect, useState } from "react";
+import { fetchInstances } from "../services/api";
 
-const MonitoringDashboard = ({ instanceId }) => {
-    const [metrics, setMetrics] = useState([]);
+export default function MonitoringDashboard() {
+  const [instances, setInstances] = useState([]);
 
-    useEffect(() => {
-        fetchInstanceMetrics(instanceId).then(data => setMetrics(data.Metrics));
-    }, [instanceId]);
+  useEffect(() => {
+    const loadInstances = async () => {
+      const data = await fetchInstances();
+      setInstances(data);
+    };
+    loadInstances();
+  }, []);
 
-    return (
-        <div>
-            <h2>Monitoring Dashboard</h2>
-            <ul>
-                {metrics.map((metric, index) => (
-                    <li key={index}>{metric}</li>
-                ))}
-            </ul>
-        </div>
-    );
-};
-
-export default MonitoringDashboard;
+  return (
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <h1 className="text-2xl font-bold">Server Monitoring</h1>
+      <ul>
+        {instances.map((instance) => (
+          <li key={instance.id} className="p-2 border rounded-md my-2">
+            {instance.name} - {instance.status}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
