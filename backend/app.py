@@ -8,6 +8,7 @@ import logging
 import boto3
 from dotenv import load_dotenv
 import os
+import datetime
 
 # Load environment variables
 load_dotenv()
@@ -77,6 +78,101 @@ def list_ec2_instances():
         return jsonify({
             "error": f"Failed to fetch EC2 instances: {str(e)}"
         }), 500
+
+# New instance management endpoints
+@app.route('/ec2/instances/<instance_id>/start', methods=['POST'])
+def start_instance(instance_id):
+    try:
+        ec2_client = boto3.client('ec2')
+        
+        # First check the current state of the instance
+        response = ec2_client.describe_instances(InstanceIds=[instance_id])
+        
+        if not response['Reservations']:
+            return jsonify({
+                "error": f"Instance {instance_id} not found"
+            }), 404
+            
+        instance = response['Reservations'][0]['Instances'][0]
+        current_state = instance['State']['Name']
+        
+        # If instance is already running, return appropriate message
+        if current_state == 'running':
+            return jsonify({
+                "message": f"Instance {instance_id} is already running",
+                "status": "running"
+            })
+            
+        # If instance is terminated, return appropriate message
+        if current_state == 'terminated':
+            return jsonify({
+                "message": f"Instance {instance_id} is terminated and cannot be started",
+                "status": "terminated"
+            })
+            
+        # If instance is in a state that can be started, proceed with starting
+        if current_state in ['stopped', 'stopping']:
+            response = ec2_client.start_instances(InstanceIds=[instance_id])
+            return jsonify({
+                "message": f"Successfully started instance {instance_id}",
+                "status": "starting"
+            })
+        else:
+            return jsonify({
+                "error": f"Cannot start instance {instance_id} from current state: {current_state}",
+                "status": current_state
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Error starting instance: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/ec2/instances/<instance_id>/stop', methods=['POST'])
+def stop_instance(instance_id):
+    try:
+        ec2_client = boto3.client('ec2')
+        
+        # First check the current state of the instance
+        response = ec2_client.describe_instances(InstanceIds=[instance_id])
+        
+        if not response['Reservations']:
+            return jsonify({
+                "error": f"Instance {instance_id} not found"
+            }), 404
+            
+        instance = response['Reservations'][0]['Instances'][0]
+        current_state = instance['State']['Name']
+        
+        # If instance is already terminated, return appropriate message
+        if current_state == 'terminated':
+            return jsonify({
+                "message": f"Instance {instance_id} is already terminated",
+                "status": "terminated"
+            })
+            
+        # If instance is already stopped, return appropriate message
+        if current_state == 'stopped':
+            return jsonify({
+                "message": f"Instance {instance_id} is already stopped",
+                "status": "stopped"
+            })
+            
+        # If instance is in a state that can be stopped, proceed with stopping
+        if current_state in ['running', 'pending']:
+            response = ec2_client.stop_instances(InstanceIds=[instance_id])
+            return jsonify({
+                "message": f"Successfully stopped instance {instance_id}",
+                "status": "stopping"
+            })
+        else:
+            return jsonify({
+                "error": f"Cannot stop instance {instance_id} from current state: {current_state}",
+                "status": current_state
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Error stopping instance: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/ec2/tag', methods=['POST'])
 def tag_instance():
@@ -239,8 +335,11 @@ def chatbot():
             
             instance_id = entities["instances"][0].id
             try:
-                result = decommission_ec2_instance(instance_id)
-                return jsonify({"reply": f"Successfully stopped instance {instance_id}: {result}"})
+                # Use the stop_instance endpoint directly
+                response = stop_instance(instance_id)
+                return jsonify({
+                    "reply": response.get_json()["message"]
+                })
             except Exception as e:
                 logger.error(f"Error stopping instance: {str(e)}")
                 return jsonify({
@@ -281,6 +380,95 @@ def chatbot():
                     "reply": f"Failed to tag instance {instance_id}. Error: {str(e)}"
                 })
 
+        elif intent == "get_instance_details":
+            if not entities.get("instances"):
+                return jsonify({
+                    "reply": "Please provide an instance ID (e.g., i-1234567890abcdef0) to get details."
+                })
+            
+            instance_id = entities["instances"][0].id
+            try:
+                ec2_client = boto3.client('ec2')
+                cloudwatch = boto3.client('cloudwatch')
+                
+                # Get basic instance details
+                response = ec2_client.describe_instances(InstanceIds=[instance_id])
+                
+                if not response['Reservations']:
+                    return jsonify({
+                        "error": f"Instance {instance_id} not found"
+                    }), 404
+                    
+                instance = response['Reservations'][0]['Instances'][0]
+                
+                # Get metrics
+                metrics_response = cloudwatch.get_metric_statistics(
+                    Namespace='AWS/EC2',
+                    MetricName='CPUUtilization',
+                    Dimensions=[{'Name': 'InstanceId', 'Value': instance_id}],
+                    StartTime=datetime.datetime.now() - datetime.timedelta(hours=24),
+                    EndTime=datetime.datetime.now(),
+                    Period=3600,
+                    Statistics=['Average']
+                )
+                
+                # Get alarms
+                alarms_response = cloudwatch.describe_alarms(
+                    AlarmNamePrefix=f"Instance-{instance_id}-"
+                )
+                
+                # Get system logs (last 24 hours)
+                logs_client = boto3.client('logs')
+                log_groups = logs_client.describe_log_groups(
+                    logGroupNamePrefix=f"/aws/ec2/{instance_id}"
+                )
+                
+                # Extract relevant details
+                details = {
+                    "Basic Information": {
+                        "Instance ID": instance['InstanceId'],
+                        "State": instance['State']['Name'],
+                        "Instance Type": instance['InstanceType'],
+                        "Launch Time": instance['LaunchTime'].strftime('%Y-%m-%d %H:%M:%S'),
+                        "Public IP": instance.get('PublicIpAddress', 'N/A'),
+                        "Private IP": instance.get('PrivateIpAddress', 'N/A'),
+                        "VPC ID": instance.get('VpcId', 'N/A'),
+                        "Subnet ID": instance.get('SubnetId', 'N/A'),
+                        "Security Groups": [sg['GroupName'] for sg in instance.get('SecurityGroups', [])],
+                        "Tags": {tag['Key']: tag['Value'] for tag in instance.get('Tags', [])}
+                    },
+                    "Metrics": {
+                        "CPU Utilization": f"{metrics_response['Datapoints'][-1]['Average']:.2f}%" if metrics_response['Datapoints'] else "N/A",
+                        "Network In": "N/A",  # Add actual network metrics
+                        "Network Out": "N/A",  # Add actual network metrics
+                        "Disk Usage": "N/A"    # Add actual disk metrics
+                    },
+                    "Alarms": [
+                        {
+                            "Name": alarm['AlarmName'],
+                            "State": alarm['StateValue'],
+                            "Metric": alarm['MetricName'],
+                            "Threshold": alarm['Threshold']
+                        } for alarm in alarms_response['MetricAlarms']
+                    ],
+                    "System Logs": {
+                        "Last Boot": "N/A",  # Add actual boot time
+                        "Last Shutdown": "N/A",  # Add actual shutdown time
+                        "Recent Events": []  # Add actual system events
+                    }
+                }
+                
+                return jsonify({
+                    "instance_id": instance_id,
+                    "details": details,
+                    "message": f"Details for instance {instance_id}"
+                })
+            except Exception as e:
+                logger.error(f"Error getting instance details: {str(e)}")
+                return jsonify({
+                    "reply": f"Failed to get details for instance {instance_id}. Error: {str(e)}"
+                })
+
         elif intent == "help":
             help_text = "Available commands:\n"
             for intent_name, description in get_intent_help().items():
@@ -294,6 +482,7 @@ def chatbot():
                         "- Start/Stop a specific instance\n" +
                         "- Metrics for a specific instance\n" +
                         "- Tag an instance\n" +
+                        "- Get instance details\n" +
                         "- Help with available commands"
             })
 
@@ -320,6 +509,175 @@ def test_aws():
             "status": "error",
             "message": f"AWS credentials are invalid: {str(e)}"
         }), 500
+
+@app.route('/ec2/instances/<instance_id>/state', methods=['GET'])
+def get_instance_state(instance_id):
+    try:
+        ec2_client = boto3.client('ec2')
+        response = ec2_client.describe_instances(InstanceIds=[instance_id])
+        
+        if not response['Reservations']:
+            return jsonify({
+                "error": f"Instance {instance_id} not found"
+            }), 404
+            
+        instance = response['Reservations'][0]['Instances'][0]
+        state = instance['State']['Name']
+        
+        return jsonify({
+            "instance_id": instance_id,
+            "state": state,
+            "message": f"Instance {instance_id} is {state}"
+        })
+    except Exception as e:
+        logger.error(f"Error checking instance state: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/ec2/instances/<instance_id>/details', methods=['GET'])
+def get_instance_details(instance_id):
+    try:
+        ec2_client = boto3.client('ec2')
+        cloudwatch = boto3.client('cloudwatch')
+        
+        # Get basic instance details
+        response = ec2_client.describe_instances(InstanceIds=[instance_id])
+        
+        if not response['Reservations']:
+            return jsonify({
+                "error": f"Instance {instance_id} not found"
+            }), 404
+            
+        instance = response['Reservations'][0]['Instances'][0]
+        
+        # Get metrics
+        metrics_response = cloudwatch.get_metric_statistics(
+            Namespace='AWS/EC2',
+            MetricName='CPUUtilization',
+            Dimensions=[{'Name': 'InstanceId', 'Value': instance_id}],
+            StartTime=datetime.datetime.now() - datetime.timedelta(hours=24),
+            EndTime=datetime.datetime.now(),
+            Period=3600,
+            Statistics=['Average']
+        )
+        
+        # Get alarms
+        alarms_response = cloudwatch.describe_alarms(
+            AlarmNamePrefix=f"Instance-{instance_id}-"
+        )
+        
+        # Get system logs (last 24 hours)
+        logs_client = boto3.client('logs')
+        log_groups = logs_client.describe_log_groups(
+            logGroupNamePrefix=f"/aws/ec2/{instance_id}"
+        )
+        
+        # Extract relevant details
+        details = {
+            "Basic Information": {
+                "Instance ID": instance['InstanceId'],
+                "State": instance['State']['Name'],
+                "Instance Type": instance['InstanceType'],
+                "Launch Time": instance['LaunchTime'].strftime('%Y-%m-%d %H:%M:%S'),
+                "Public IP": instance.get('PublicIpAddress', 'N/A'),
+                "Private IP": instance.get('PrivateIpAddress', 'N/A'),
+                "VPC ID": instance.get('VpcId', 'N/A'),
+                "Subnet ID": instance.get('SubnetId', 'N/A'),
+                "Security Groups": [sg['GroupName'] for sg in instance.get('SecurityGroups', [])],
+                "Tags": {tag['Key']: tag['Value'] for tag in instance.get('Tags', [])}
+            },
+            "Metrics": {
+                "CPU Utilization": f"{metrics_response['Datapoints'][-1]['Average']:.2f}%" if metrics_response['Datapoints'] else "N/A",
+                "Network In": "N/A",  # Add actual network metrics
+                "Network Out": "N/A",  # Add actual network metrics
+                "Disk Usage": "N/A"    # Add actual disk metrics
+            },
+            "Alarms": [
+                {
+                    "Name": alarm['AlarmName'],
+                    "State": alarm['StateValue'],
+                    "Metric": alarm['MetricName'],
+                    "Threshold": alarm['Threshold']
+                } for alarm in alarms_response['MetricAlarms']
+            ],
+            "System Logs": {
+                "Last Boot": "N/A",  # Add actual boot time
+                "Last Shutdown": "N/A",  # Add actual shutdown time
+                "Recent Events": []  # Add actual system events
+            }
+        }
+        
+        return jsonify({
+            "instance_id": instance_id,
+            "details": details,
+            "message": f"Details for instance {instance_id}"
+        })
+    except Exception as e:
+        logger.error(f"Error getting instance details: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/ec2/instances/<instance_id>/logs', methods=['GET'])
+def get_instance_logs(instance_id):
+    try:
+        logs_client = boto3.client('logs')
+        cloudwatch = boto3.client('cloudwatch')
+        
+        # Get system logs
+        log_groups = logs_client.describe_log_groups(
+            logGroupNamePrefix=f"/aws/ec2/{instance_id}"
+        )
+        
+        logs = []
+        for log_group in log_groups.get('logGroups', []):
+            log_streams = logs_client.describe_log_streams(
+                logGroupName=log_group['logGroupName'],
+                orderBy='LastEventTime',
+                descending=True,
+                limit=5
+            )
+            
+            for stream in log_streams.get('logStreams', []):
+                events = logs_client.get_log_events(
+                    logGroupName=log_group['logGroupName'],
+                    logStreamName=stream['logStreamName'],
+                    limit=10
+                )
+                
+                for event in events.get('events', []):
+                    logs.append({
+                        'timestamp': datetime.datetime.fromtimestamp(event['timestamp']/1000).strftime('%Y-%m-%d %H:%M:%S'),
+                        'message': event['message'],
+                        'log_group': log_group['logGroupName'],
+                        'log_stream': stream['logStreamName']
+                    })
+        
+        # Get CloudWatch metrics for system status
+        metrics = cloudwatch.get_metric_statistics(
+            Namespace='AWS/EC2',
+            MetricName='StatusCheckFailed_System',
+            Dimensions=[{'Name': 'InstanceId', 'Value': instance_id}],
+            StartTime=datetime.datetime.now() - datetime.timedelta(hours=24),
+            EndTime=datetime.datetime.now(),
+            Period=3600,
+            Statistics=['Sum']
+        )
+        
+        # Get instance state changes
+        ec2_client = boto3.client('ec2')
+        state_changes = ec2_client.describe_instance_status(
+            InstanceIds=[instance_id],
+            IncludeAllInstances=True
+        )
+        
+        return jsonify({
+            "instance_id": instance_id,
+            "logs": logs,
+            "metrics": metrics.get('Datapoints', []),
+            "state_changes": state_changes.get('InstanceStatuses', []),
+            "message": f"Logs for instance {instance_id}"
+        })
+    except Exception as e:
+        logger.error(f"Error getting instance logs: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 # 🟢 Run the Flask App
 if __name__ == '__main__':

@@ -12,3 +12,4 @@ venv/
 # Ignore frontend build (if applicable)
 .aws/credentials
 
+node_modules

@@ -1,5 +1,6 @@
 import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 
+
 // Extend the theme if needed
 const theme = extendTheme({
   // Add your custom theme configuration here
