@@ -35,7 +35,7 @@ const exampleCommands = [
   {
     category: "Monitoring",
     commands: [
-      "Create alarm for instance i-0258169e9696af1ee",
+      // "Create alarm for instance i-0258169e9696af1ee",
       // "Check health of instance i-0258169e9696af1ee",
       "Show CPU usage for instance i-0258169e9696af1ee",
       "Show memory usage for instance i-0258169e9696af1ee",
@@ -169,55 +169,32 @@ export default function ChatInterface({ onResponse }) {
         const instanceId = cpuUsageMatch[1];
         try {
           const response = await getInstanceDetails(instanceId);
-          const metrics = response.details["Metrics"];
+          if (response.error) {
+            setChatHistory((prev) => [
+              ...prev,
+              { type: "error", content: response.error },
+            ]);
+            return;
+          }
 
-          // Format CPU usage in a table
-          const cpuUsageHtml = `
+          const metrics = response.details["Metrics"];
+          const cpuUtilization = metrics["CPU Utilization"] || "N/A";
+
+          const cpuTable = `
             <div class="overflow-x-auto">
-              <h3 class="text-lg font-semibold mb-2">CPU Usage Metrics</h3>
               <table class="min-w-full bg-white border border-gray-200">
-                <thead>
-                  <tr class="bg-gray-50">
-                    <th class="px-4 py-2">Metric</th>
-                    <th class="px-4 py-2">Value</th>
-                    <th class="px-4 py-2">Unit</th>
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metric</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr class="border-b">
-                    <td class="px-4 py-2 font-medium">Average CPU Utilization</td>
-                    <td class="px-4 py-2">${
-                      metrics["CPUUtilization"] || "N/A"
-                    }</td>
-                    <td class="px-4 py-2">%</td>
-                  </tr>
-                  <tr class="border-b">
-                    <td class="px-4 py-2 font-medium">CPU Credit Usage</td>
-                    <td class="px-4 py-2">${
-                      metrics["CPUCreditUsage"] || "N/A"
-                    }</td>
-                    <td class="px-4 py-2">Credits</td>
-                  </tr>
-                  <tr class="border-b">
-                    <td class="px-4 py-2 font-medium">CPU Credit Balance</td>
-                    <td class="px-4 py-2">${
-                      metrics["CPUCreditBalance"] || "N/A"
-                    }</td>
-                    <td class="px-4 py-2">Credits</td>
-                  </tr>
-                  <tr class="border-b">
-                    <td class="px-4 py-2 font-medium">CPU Surplus Credit Balance</td>
-                    <td class="px-4 py-2">${
-                      metrics["CPUSurplusCreditBalance"] || "N/A"
-                    }</td>
-                    <td class="px-4 py-2">Credits</td>
-                  </tr>
-                  <tr class="border-b">
-                    <td class="px-4 py-2 font-medium">CPU Surplus Credits Charged</td>
-                    <td class="px-4 py-2">${
-                      metrics["CPUSurplusCreditsCharged"] || "N/A"
-                    }</td>
-                    <td class="px-4 py-2">Credits</td>
+                <tbody class="divide-y divide-gray-200">
+                  <tr>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">Average CPU Utilization</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${cpuUtilization}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">%</td>
                   </tr>
                 </tbody>
               </table>
@@ -226,7 +203,7 @@ export default function ChatInterface({ onResponse }) {
 
           const cpuUsageMessage = {
             type: "bot",
-            content: cpuUsageHtml,
+            content: `CPU Usage Metrics for instance ${instanceId}:` + cpuTable,
           };
           setChatHistory((prev) => [...prev, cpuUsageMessage]);
           setMessage("");

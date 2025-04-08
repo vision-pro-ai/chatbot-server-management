@@ -2,6 +2,9 @@ import boto3
 import schedule
 import time
 import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 def create_cloudwatch_alarm(instance_id, region='us-east-1'):
     try:
@@ -41,14 +44,77 @@ def put_custom_metric(instance_id, metric_name, value, unit="Count", region="us-
 def get_instance_metrics(instance_id, region='us-east-1'):
     try:
         cloudwatch = boto3.client('cloudwatch', region_name=region)
-        response = cloudwatch.list_metrics(
+        
+        # Get metrics for the last 24 hours to ensure we have data
+        end_time = datetime.datetime.now()
+        start_time = end_time - datetime.timedelta(hours=24)
+        
+        # Get CPU Utilization with proper statistics
+        cpu_response = cloudwatch.get_metric_statistics(
             Namespace='AWS/EC2',
-            Dimensions=[{'Name': 'InstanceId', 'Value': instance_id}]
+            MetricName='CPUUtilization',
+            Dimensions=[{'Name': 'InstanceId', 'Value': instance_id}],
+            StartTime=start_time,
+            EndTime=end_time,
+            Period=3600,  # 1 hour period
+            Statistics=['Average']
         )
-        metrics = [metric['MetricName'] for metric in response.get('Metrics', [])]
-        return {"Instance ID": instance_id, "Metrics": metrics}
+        
+        # Get Network metrics
+        network_in_response = cloudwatch.get_metric_statistics(
+            Namespace='AWS/EC2',
+            MetricName='NetworkIn',
+            Dimensions=[{'Name': 'InstanceId', 'Value': instance_id}],
+            StartTime=start_time,
+            EndTime=end_time,
+            Period=3600,
+            Statistics=['Sum']
+        )
+        
+        network_out_response = cloudwatch.get_metric_statistics(
+            Namespace='AWS/EC2',
+            MetricName='NetworkOut',
+            Dimensions=[{'Name': 'InstanceId', 'Value': instance_id}],
+            StartTime=start_time,
+            EndTime=end_time,
+            Period=3600,
+            Statistics=['Sum']
+        )
+        
+        # Process CPU metrics
+        cpu_utilization = "N/A"
+        if cpu_response.get('Datapoints'):
+            # Get the most recent data point
+            latest_cpu = sorted(cpu_response['Datapoints'], key=lambda x: x['Timestamp'])[-1]
+            cpu_utilization = f"{latest_cpu['Average']:.2f}%"
+        
+        # Process Network metrics
+        network_in = "N/A"
+        if network_in_response.get('Datapoints'):
+            latest_network_in = sorted(network_in_response['Datapoints'], key=lambda x: x['Timestamp'])[-1]
+            network_in = f"{latest_network_in['Sum']:.0f} bytes"
+        
+        network_out = "N/A"
+        if network_out_response.get('Datapoints'):
+            latest_network_out = sorted(network_out_response['Datapoints'], key=lambda x: x['Timestamp'])[-1]
+            network_out = f"{latest_network_out['Sum']:.0f} bytes"
+        
+        result = {
+            'cpu_utilization': cpu_utilization,
+            'network_in': network_in,
+            'network_out': network_out,
+            'timestamp': end_time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        return result
     except Exception as e:
-        return {"error": str(e)}
+        logger.error(f"Error fetching metrics for instance {instance_id}: {str(e)}")
+        return {
+            'error': str(e),
+            'cpu_utilization': 'N/A',
+            'network_in': 'N/A',
+            'network_out': 'N/A'
+        }
 
 def create_alarm(instance_id, metric_name, threshold, region='us-east-1'):
     try:
