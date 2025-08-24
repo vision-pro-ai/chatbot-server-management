@@ -1,15 +1,12 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { Box, VStack, Text, Spinner } from "@chakra-ui/react";
-import { getInstances, startInstance, stopInstance } from "../services/api";
 
 export default function MonitoringDashboard({
-  instances,
-  loading,
-  error,
-  onRefresh,
-  onStartInstance,
-  onStopInstance,
+  instances = [], // default to empty array
+  loading = false,
+  error = null,
+  onRefresh = () => {},
+  onStartInstance = () => {},
+  onStopInstance = () => {},
 }) {
   if (loading) {
     return (
@@ -51,21 +48,26 @@ export default function MonitoringDashboard({
         <p className="text-gray-500 text-center">No instances found</p>
       ) : (
         <div className="grid gap-4">
-          {instances.map((instance) => (
+          {instances.map((instance, index) => (
             <div
-              key={instance.id}
+              key={instance.id || index}
               className="border rounded-lg p-4 hover:shadow-md transition-shadow"
             >
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-semibold text-gray-800">
-                    {instance.InstanceId || instance["Instance ID"]}
+                    {instance.InstanceId ||
+                      instance["Instance ID"] ||
+                      "Unknown ID"}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    State: {instance.State || instance["State"]}
+                    State: {instance.State || instance["State"] || "Unknown"}
                   </p>
                   <p className="text-sm text-gray-500">
-                    Type: {instance.InstanceType || instance["Instance Type"]}
+                    Type:{" "}
+                    {instance.InstanceType ||
+                      instance["Instance Type"] ||
+                      "Unknown"}
                   </p>
                 </div>
                 <div className="flex gap-2">
