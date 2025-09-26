@@ -2,17 +2,29 @@
 
 A modern web application for managing AWS EC2 instances through natural language commands. This project provides a user-friendly interface to interact with AWS resources using a chatbot interface.
 
-## Features
 
-- Natural language processing for AWS commands
-- Real-time EC2 instance monitoring
-- Instance management (start, stop, reboot)
-- Resource tagging and organization
-- CloudWatch metrics integration
-- Modern React frontend with Chakra UI
-- Secure AWS credential management
-- Comprehensive error handling
-- Automated testing
+## [AWS Server-Management Chatbot](https://github.com/vision-pro-ai/chatbot-server-management)
+Python-based chatbot designed to **manage AWS EC2 instances** and automate server tasks using **Boto3**. Enables real-time monitoring, snapshot cleanup, and efficient cloud resource management.
+
+<img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/> <img src="https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=FF9900" alt="AWS"/> <img src="https://img.shields.io/badge/Boto3-4B8BBE?style=for-the-badge&logo=python&logoColor=white" alt="Boto3"/> <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white" alt="Flask"/> <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/> <img src="https://img.shields.io/badge/Tailwind-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind"/>
+
+![images](https://github.com/kashishver-ma/kashishver-ma/blob/main/img.jpg)
+
+## Features
+- **AWS EC2 Management**: Start, stop, and monitor EC2 instances programmatically.
+- **Snapshot Automation**: Identify and delete stale EBS snapshots to optimize storage costs.
+- **Real-Time Monitoring**: Fetch server status, CPU utilization, and other metrics on-demand.
+- **Interactive Chatbot Interface**: User-friendly chatbot interface to trigger server actions.
+- **Cloud Integration**: Fully utilizes AWS SDK (**Boto3**) for seamless interaction with cloud resources.
+- **Data Export**: Generate real-time reports in **Excel** or **PDF** for audit and analysis.
+
+## Key Learnings
+- Gained hands-on experience with **AWS services** (EC2, S3, Lambda, CloudWatch).
+- Learned to automate **server management tasks** using **Python and Boto3**.
+- Implemented **real-time data fetching** and reporting.
+- Improved understanding of **cloud resource optimization** and cost management.
+- Enhanced skills in building **interactive CLI/Chatbot applications** with Python.
+
 
 ## Prerequisites
 
@@ -160,9 +172,6 @@ The project uses:
 - Error handling and logging
 - Secure AWS IAM roles and policies
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Acknowledgments
 
