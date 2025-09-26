@@ -24,6 +24,7 @@ export default function Home() {
       setLoading(true);
       setError(null);
       const response = await getInstances();
+
       if (response.data && response.data.instances) {
         // Ensure each instance has a unique identifier
         const processedInstances = response.data.instances.map((instance) => ({
@@ -33,7 +34,9 @@ export default function Home() {
             instance["Instance ID"] ||
             Math.random().toString(36).substr(2, 9),
         }));
+
         setInstances(processedInstances);
+
         setRetryCount(0); // Reset retry count on success
       } else {
         setInstances([]);
@@ -47,7 +50,7 @@ export default function Home() {
       setInstances([]);
 
       // Auto-retry logic (max 3 retries)
-      if (retryCount < 3) {
+      if (retryCount < 5) {
         setRetryCount((prev) => prev + 1);
         setTimeout(() => {
           loadInstances();
@@ -210,24 +213,23 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Chat Interface - Now the primary element, taking up 60%+ of screen space */}
-          <div className={`${showSidebar ? "md:w-3/5" : "w-full"} transition-all duration-300`}>
-           
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                <h2 className="text-xl font-semibold text-white">
-                  AI Server Assistant
-                </h2>
-              </div>
-              
-              {/* Chat messages area */}
-              <div className="p-6 flex-grow overflow-y-auto">
-                <ChatInterface 
-                  onResponse={handleChatResponse}
-                />
-              </div>
-              
-              {/* Chat input area */}
-              
-            
+          <div
+            className={`${
+              showSidebar ? "md:w-3/5" : "w-full"
+            } transition-all duration-300`}
+          >
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+              <h2 className="text-xl font-semibold text-white">
+                AI Server Assistant
+              </h2>
+            </div>
+
+            {/* Chat messages area */}
+            <div className="p-6 flex-grow overflow-y-auto">
+              <ChatInterface onResponse={handleChatResponse} />
+            </div>
+
+            {/* Chat input area */}
           </div>
 
           {/* Collapsible Sidebar - Dashboard and Actions */}
@@ -331,7 +333,7 @@ export default function Home() {
                 </div>
               </div>
 
-      {/* Monitoring Dashboard */}
+              {/* Monitoring Dashboard */}
               <div className="bg-white shadow rounded-lg p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-medium text-gray-900">
