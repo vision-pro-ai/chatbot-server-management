@@ -1,7 +1,7 @@
 import boto3
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
-def get_ec2_instances(region='us-east-1'):
+def get_ec2_instances(region='ap-south-1'):
     """Fetch list of EC2 instances."""
     try:
         ec2_client = boto3.client('ec2', region_name=region)
@@ -28,7 +28,7 @@ def get_ec2_instances(region='us-east-1'):
         print(f"Error retrieving EC2 instances: {str(e)}")
         return None
 
-def tag_ec2_instance(instance_id, tags, region='us-east-1'):
+def tag_ec2_instance(instance_id, tags, region='ap-south-1'):
     """Tag an EC2 instance."""
     try:
         ec2_client = boto3.client('ec2', region_name=region)
@@ -40,7 +40,7 @@ def tag_ec2_instance(instance_id, tags, region='us-east-1'):
     except Exception as e:
         return f"Error tagging instance {instance_id}: {str(e)}"
 
-def decommission_ec2_instance(instance_id, region='us-east-1'):
+def decommission_ec2_instance(instance_id, region='ap-south-1'):
     """
     Decommissions an EC2 instance by stopping and terminating it.
     :param instance_id: EC2 instance ID
@@ -65,7 +65,7 @@ def decommission_ec2_instance(instance_id, region='us-east-1'):
     except Exception as e:
         return f"Error decommissioning instance {instance_id}: {str(e)}"
 
-def enable_detailed_monitoring(instance_id, region='us-east-1'):
+def enable_detailed_monitoring(instance_id, region='ap-south-1'):
     """Enable detailed monitoring for an EC2 instance."""
     try:
         ec2_client = boto3.client('ec2', region_name=region)

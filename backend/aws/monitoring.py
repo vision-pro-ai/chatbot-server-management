@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def create_cloudwatch_alarm(instance_id, region='us-east-1'):
+def create_cloudwatch_alarm(instance_id, region='ap-south-1'):
     try:
         cloudwatch_client = boto3.client('cloudwatch', region_name=region)
         response = cloudwatch_client.put_metric_alarm(
@@ -25,7 +25,7 @@ def create_cloudwatch_alarm(instance_id, region='us-east-1'):
     except Exception as e:
         return f"Error creating CloudWatch alarm: {str(e)}"
     
-def put_custom_metric(instance_id, metric_name, value, unit="Count", region="us-east-1"):
+def put_custom_metric(instance_id, metric_name, value, unit="Count", region="ap-south-1"):
     try:
         cloudwatch = boto3.client('cloudwatch', region_name=region)
         cloudwatch.put_metric_data(
@@ -41,7 +41,7 @@ def put_custom_metric(instance_id, metric_name, value, unit="Count", region="us-
     except Exception as e:
         return f"Error updating metric: {str(e)}"
     
-def get_instance_metrics(instance_id, region='us-east-1'):
+def get_instance_metrics(instance_id, region='ap-south-1'):
     try:
         cloudwatch = boto3.client('cloudwatch', region_name=region)
         
@@ -116,7 +116,7 @@ def get_instance_metrics(instance_id, region='us-east-1'):
             'network_out': 'N/A'
         }
 
-def create_alarm(instance_id, metric_name, threshold, region='us-east-1'):
+def create_alarm(instance_id, metric_name, threshold, region='ap-south-1'):
     try:
         cloudwatch = boto3.client('cloudwatch', region_name=region)
         alarm_name = f"Alarm-{instance_id}-{metric_name}"
@@ -136,7 +136,7 @@ def create_alarm(instance_id, metric_name, threshold, region='us-east-1'):
     except Exception as e:
         return f"Error creating alarm: {str(e)}"
     
-def check_instance_health(instance_id, region='us-east-1'):
+def check_instance_health(instance_id, region='ap-south-1'):
     try:
         ec2_client = boto3.client('ec2', region_name=region)
         response = ec2_client.describe_instance_status(InstanceIds=[instance_id])
@@ -153,7 +153,7 @@ def check_instance_health(instance_id, region='us-east-1'):
     except Exception as e:
         return {"error": str(e)}
 
-def get_ec2_metrics(instance_id, region='us-east-1'):
+def get_ec2_metrics(instance_id, region='ap-south-1'):
     cloudwatch = boto3.client('cloudwatch', region_name=region)
     response = cloudwatch.list_metrics(
         Namespace='AWS/EC2',
@@ -161,7 +161,7 @@ def get_ec2_metrics(instance_id, region='us-east-1'):
     )
     return [metric['MetricName'] for metric in response.get('Metrics', [])]
 
-def get_ebs_metrics(volume_id, region='us-east-1'):
+def get_ebs_metrics(volume_id, region='ap-south-1'):
     cloudwatch = boto3.client('cloudwatch', region_name=region)
     response = cloudwatch.list_metrics(
         Namespace='AWS/EBS',

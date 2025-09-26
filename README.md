@@ -42,7 +42,7 @@ chmod +x setup.sh
 ```bash
 AWS_ACCESS_KEY_ID=your_access_key_id
 AWS_SECRET_ACCESS_KEY=your_secret_access_key
-AWS_DEFAULT_REGION=us-east-1
+AWS_DEFAULT_REGION=ap-south-1
 FLASK_ENV=development
 FLASK_APP=backend/app.py
 ```

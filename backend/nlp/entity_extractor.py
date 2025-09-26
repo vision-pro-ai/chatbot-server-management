@@ -139,7 +139,7 @@ def extract_entities(text: str) -> Dict[str, List[AWSResource]]:
 # Example usage
 if __name__ == "__main__":
     test_inputs = [
-        "Start instance i-0a1b2c3d4e5f6g7h8 in us-east-1",
+        "Start instance i-0a1b2c3d4e5f6g7h8 in ap-south-1",
         "Create a t2.micro instance with tags Environment=Production, Project=WebApp",
         "Backup volume vol-1234567890abcdef to snapshot snap-abcdef12",
         "Launch an instance using AMI ami-12345678",
