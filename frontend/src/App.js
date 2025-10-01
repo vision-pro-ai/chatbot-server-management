@@ -24,7 +24,7 @@ function App() {
         title: "Health Check",
         description: "Backend is healthy!",
         status: "success",
-        duration: 3000,
+        duration: 30000,
       });
     } catch (error) {
       toast({

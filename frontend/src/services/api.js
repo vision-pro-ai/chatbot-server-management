@@ -60,6 +60,7 @@ api.interceptors.response.use(
 const endpoints = {
   // Instance Management
   getInstances: () => api.get("/ec2/instances"),
+
   startInstance: (instanceId) => api.post(`/ec2/instances/${instanceId}/start`),
   stopInstance: (instanceId) => api.post(`/ec2/instances/${instanceId}/stop`),
   getInstanceDetails: async (instanceId) => {
@@ -71,6 +72,7 @@ const endpoints = {
       throw error;
     }
   },
+
   tagInstance: (instanceId, tags) =>
     api.post("/ec2/tag", { instance_id: instanceId, tags }),
   decommissionInstance: (instanceId) =>

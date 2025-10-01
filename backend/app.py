@@ -63,6 +63,7 @@ def health_check():
 @app.route('/ec2/instances', methods=['GET'])
 def list_ec2_instances():
     try:
+        
         instances = get_ec2_instances()
         if instances is None:
             return jsonify({

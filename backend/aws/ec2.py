@@ -18,7 +18,7 @@ def get_ec2_instances(region='ap-south-1'):
                     'Public IP': instance.get('PublicIpAddress', 'N/A'),
                 }
                 instances.append(instance_details)
-
+        print("list returned from aws to backend ec2.py: " , instances)
         return instances
 
     except (NoCredentialsError, PartialCredentialsError) as e:
@@ -73,6 +73,7 @@ def enable_detailed_monitoring(instance_id, region='ap-south-1'):
         return f"Enabled detailed monitoring for instance {instance_id}."
     except Exception as e:
         return f"Error enabling monitoring: {str(e)}"
+
 
 # Flask route integration example
 from flask import Flask, jsonify, request
