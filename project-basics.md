@@ -113,5 +113,6 @@ npm run build → Production build.
 
 npm run dev → Temporary build for development.
 
+axios — is a JavaScript library used to make HTTP requests (like GET, POST, PUT, DELETE) from your frontend (React/Next.js) to a backend (like Node.js, Python, etc.) — usually to APIs.
 
 
