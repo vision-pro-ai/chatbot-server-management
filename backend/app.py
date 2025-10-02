@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from aws.monitoring import get_instance_metrics, get_ec2_metrics, get_ebs_metrics, create_cloudwatch_alarm, check_instance_health
 from aws.ec2 import get_ec2_instances, tag_ec2_instance, decommission_ec2_instance, enable_detailed_monitoring
+from aws.info import get_aws_info
 from nlp.intent_classifier import classify_intent
 from nlp.entity_extractor import extract_entities
 import logging
@@ -28,6 +29,14 @@ CORS(app,
          "expose_headers": ["Content-Type", "Authorization"],
          "supports_credentials": False
      }})
+
+@app.route('/info', methods=['GET'])
+def aws_info():
+    print("calling info backend")
+    info = get_aws_info()  # call function from info.py
+    print("info " ,info)
+    return jsonify(info)
+
 
 # Root route
 @app.route('/', methods=['GET'])

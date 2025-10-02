@@ -58,6 +58,18 @@ api.interceptors.response.use(
 
 // API endpoints
 const endpoints = {
+  // AWS Account Info
+  getAwsInfo: async () => {
+    try {
+      console.log("api calling  backend");
+      const response = await api.get("/info");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching AWS account info:", error);
+      throw error;
+    }
+  },
+
   // Instance Management
   getInstances: () => api.get("/ec2/instances"),
 
@@ -127,6 +139,7 @@ export const {
   sendMessage,
   healthCheck,
   getInstanceState,
+  getAwsInfo,
 } = endpoints;
 
 // Export default object with all functions

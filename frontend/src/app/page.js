@@ -1,6 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getInstances, startInstance, stopInstance } from "../services/api";
+import {
+  getInstances,
+  startInstance,
+  stopInstance,
+  getAwsInfo,
+} from "../services/api";
 import ChatInterface from "../components/ChatInterface";
 import MonitoringDashboard from "../components/MonitoringDashboard";
 import TimeDisplay from "../components/TimeDisplay";
@@ -15,7 +20,21 @@ export default function Home() {
   const [userCommand, setUserCommand] = useState("");
   const [showSidebar, setShowSidebar] = useState(true);
 
+  const [awsInfo, setAwsInfo] = useState(null);
+
   useEffect(() => {
+    async function loadAwsInfo() {
+      try {
+        const data = await getAwsInfo(); // now it’s defined
+        setAwsInfo(data);
+      } catch (error) {
+        console.error("Failed to load AWS info:", error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadAwsInfo();
     loadInstances();
   }, []);
 
@@ -182,6 +201,12 @@ export default function Home() {
       </div>
     );
   }
+  // Function to extract username from ARN
+  function getUsernameFromArn(arn) {
+    if (!arn) return "";
+    const parts = arn.split("/");
+    return parts[parts.length - 1]; // Last part after "/"
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -189,9 +214,14 @@ export default function Home() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900">
-              AWS Server Management
+            <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+              {awsInfo
+                ? `Welcome ${getUsernameFromArn(awsInfo.arn)} (${
+                    awsInfo.region
+                  })!`
+                : "Loading AWS info..."}
             </h1>
+
             <div className="flex space-x-4">
               <button
                 onClick={toggleSidebar}
